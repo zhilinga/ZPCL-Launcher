@@ -80,6 +80,9 @@ object PclSkinSettings {
     private const val KEY_UI_SCALE = "pcl2.ui.scale"
     private const val KEY_HOME_PANEL_RIGHT = "pcl2.ui.homePanelRight"
 
+    /** 标题栏默认名称，文本模式与设置页共用。 */
+    const val DEFAULT_LOGO_TEXT = "ZPCL"
+
     /** 「界面缩放」的自动档：固定 75%（见 [resolveScale]）。 */
     const val UI_SCALE_AUTO = -1
 

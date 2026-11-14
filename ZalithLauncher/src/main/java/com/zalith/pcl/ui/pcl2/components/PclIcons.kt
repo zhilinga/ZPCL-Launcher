@@ -526,12 +526,16 @@ object PclIcons {
 
     // ---------------------------------------------------------------- 标题栏
 
-    /** `FormMain.xaml` → ShapeTitleLogo（PCL 三个字母的描边轮廓）。 */
+    /**
+     * 标题栏 ZPCL 描边 Logo，沿用 ShapeTitleLogo 的轮廓。
+     * 视口按 105/85 加宽，四个字母间距与上游 PCL 保持一致。
+     */
     val titleLogo by lazy {
         pclStrokeVector(
-            "PclTitleLogo",
-            "M26,29 v-25 h6 a7,7 180 0 1 0,14 h-6 M62.5,6.5 a10,11.5 180 1 0 0,18 M71,2.5 v24.5 h13.5",
-            viewportWidth = 85f,
+            "ZpclTitleLogo",
+            "M11,4 h16 l-16,23 h16 M35,29 v-25 h6 a7,7 180 0 1 0,14 h-6 " +
+                "M71.5,6.5 a10,11.5 180 1 0 0,18 M80,2.5 v24.5 h13.5",
+            viewportWidth = 105f,
             viewportHeight = 29f,
             strokeWidth = 2.2f,
         )

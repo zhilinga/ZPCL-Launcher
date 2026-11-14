@@ -967,14 +967,14 @@ private fun PclTitleBar(nav: PclNavController) {
             .then(if (glassTitle) Modifier else Modifier.background(titleBrush)),
     ) {
         if (sub == null) {
-            // PCL 描边 Logo / 自定义文本（`UiLogoType` + `UiLogoText` + `UiLogoLeft`）：
-            // ShapeTitleLogo Width=39、Margin="19,15.5,0,15.5"（→ 高 17）；
+            // ZPCL 描边 Logo / 自定义文本（`UiLogoType` + `UiLogoText` + `UiLogoLeft`）：
+            // ShapeTitleLogo Width=48、Margin="19,15.5,0,15.5"（→ 高 17）；
             // 文本用 `LabTitleLogo`（FontSize=17、白色、Margin="18,0,0,0"）。
             val logoAlign = if (PclSkinSettings.logoLeft) Alignment.CenterStart else Alignment.Center
             when (PclSkinSettings.logoType) {
                 PclLogoType.None -> Unit
                 PclLogoType.Text -> Text(
-                    text = PclSkinSettings.logoText.ifBlank { "PCL" },
+                    text = PclSkinSettings.logoText.ifBlank { PclSkinSettings.DEFAULT_LOGO_TEXT },
                     style = PclTextStyle.base(p).copy(
                         fontSize = 17.sp,
                         lineHeight = PclTextStyle.lineHeight(17),
@@ -2047,7 +2047,7 @@ private fun PclSplashOverlay(spec: PclSplashSpec) {
  * 品牌标记：一块方正的小牌子，中间一个镂空的 Z。
  *
  * 圆角由 `ui.json` 的 `splash.corner` 控制 —— 液态玻璃给 20 会显得饱满，
- * Claude 这种终端风给 4~8 就是一块干脆的方牌。
+ * 终端风主题给 4~8 就是一块干脆的方牌。
  */
 @Composable
 private fun SplashMark(spec: PclSplashSpec) {

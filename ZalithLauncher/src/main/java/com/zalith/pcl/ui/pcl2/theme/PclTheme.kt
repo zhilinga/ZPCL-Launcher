@@ -177,10 +177,10 @@ object PclDimens {
     val titleBarHeight: Dp = 48.dp
 
     /**
-     * `ShapeTitleLogo`：`Width="39"`、`Margin="19,15.5,0,15.5"`、`StrokeThickness="2.2"`。
-     * 高度 = 48 − 15.5 × 2 = 17。
+     * `ShapeTitleLogo`：`Margin="19,15.5,0,15.5"`、`StrokeThickness="2.2"`。
+     * 高度 = 48 − 15.5 × 2 = 17；宽度随四字母 Logo 的视口放大到 48。
      */
-    val titleLogoWidth: Dp = 39.dp
+    val titleLogoWidth: Dp = 48.dp
     val titleLogoHeight: Dp = 17.dp
     val titleLogoStart: Dp = 19.dp
 
