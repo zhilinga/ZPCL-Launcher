@@ -58,13 +58,6 @@
 - 陶瓦（Terracotta）联机模块内置，未启用时联机页给出引导
 - 更新检查：`latest_version_md.json` + 官网分流，更新弹窗里常驻「从官网下载（若下载缓慢）」
 
-### 插件
-
-启动器把外观和扩展功能拆给了插件（APK 形式，随包装进 `assets/zplugin/`）：
-
-- **皮肤插件**：换配色、圆角、玻璃质感，可选接管部分版块页面
-- **自带界面插件**：`entry: true` 的插件会在首页多一个胶囊入口，页面内容由插件自己声明
-- 插件能往版块左栏追加条目、整块接管某个版块、通过 ContentProvider 提供版本列表等数据
 
 写插件请看 **[docs/PLUGIN_GUIDE.md](docs/PLUGIN_GUIDE.md)**（目录结构、`plugin.json`、
 `pages.json`、积木与动作清单、数据通道、最小示例与排错表）。
