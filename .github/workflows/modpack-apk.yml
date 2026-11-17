@@ -3,15 +3,19 @@ name: 整合包专属 APK
 # ── 这是什么 ─────────────────────────────────────────────────────────────
 # 给「整合包专属启动器」用的打包流水线：
 #   1. 把整合包 / 预装游戏目录的 zip 塞进 APK 的 assets/zpcl_bundle/
-#   2. 顺手写一份 payload.json（名字、字节数、sha256），App 首次启动照它校验并解压
+#   2. 顺手写一份 payload.json（名字、字节数、sha256），App 首启照它校验并解压
 #   3. 编译出单架构 APK，可选直接发 Release
+#
+# 触发方式：
+#   · 手动（推荐）：Actions → 整合包专属 APK → Run workflow，填 payload_url
+#   · push：只做编译验证，不注入 payload，产物是普通启动器
 #
 # 需要在仓库 Settings → Secrets and variables → Actions 里配：
 #   KEYSTORE_BASE64   ZalithLauncher/zpcl_release.jks 的 base64（正式签名，强烈建议配）
 #   STORE_PASSWORD    keystore 口令
 #   KEY_PASSWORD      key 口令
 #   OAUTH_CLIENT_ID   正版登录用，可留空
-#   CURSEFORGE_API_KEY 可留空（留空则曲线只能走 Modrinth）
+#   CURSEFORGE_API_KEY 可留空（留空则资源搜索只能走 Modrinth）
 # 没配 KEYSTORE_BASE64 时会现场生成一次性密钥，产物只能自用，覆盖安装必冲突。
 
 on:
@@ -22,7 +26,7 @@ on:
         required: false
         default: ''
       payload_name:
-        description: '整合包显示名（写进 payload.json，App 首次启动据此命名实例）'
+        description: '整合包显示名（写进 payload.json）'
         required: false
         default: '内置整合包'
       arch:
@@ -50,12 +54,19 @@ on:
         required: true
         type: boolean
         default: false
+  push:
+    branches:
+      - 'feat/**'
+    paths:
+      - 'ZalithLauncher/src/main/java/**'
+      - 'ZalithLauncher/build.gradle.kts'
+      - '.github/workflows/modpack-apk.yml'
 
 permissions:
   contents: write
 
 concurrency:
-  group: modpack-apk-${{ github.ref }}
+  group: modpack-apk-
   cancel-in-progress: true
 
 jobs:
@@ -86,7 +97,7 @@ jobs:
           add-job-summary: on-failure
 
       - name: 注入整合包到 assets
-        id: payload
+        if: github.event_name == 'workflow_dispatch'
         shell: bash
         run: |
           set -euo pipefail
@@ -112,7 +123,6 @@ jobs:
 
           echo "--- payload.json ---"
           cat "$DEST/payload.json"
-          echo "size=$SIZE" >> "$GITHUB_OUTPUT"
           du -sh "$DEST"
 
       - name: 准备签名密钥
@@ -150,7 +160,7 @@ jobs:
           fi
           grep -E '^launcher_version_(name|code)=' "$P"
 
-      - name: 构建 ${{ inputs.variant }} APK
+      - name: 构建 APK
         shell: bash
         env:
           STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
@@ -161,22 +171,30 @@ jobs:
           set -euo pipefail
           export STORE_PASSWORD="${STORE_PASSWORD:-zpcltmp123}"
           export KEY_PASSWORD="${KEY_PASSWORD:-zpcltmp123}"
+          VARIANT='${{ inputs.variant }}'
+          ARCH='${{ inputs.arch }}'
+          [ -n "$VARIANT" ] || VARIANT=Debug
+          [ -n "$ARCH" ] || ARCH=arm64
+          echo "variant=$VARIANT arch=$ARCH"
           chmod +x gradlew
-          ./gradlew ":ZalithLauncher:assemble${{ inputs.variant }}" \
-            -Darch=${{ inputs.arch }} --no-daemon --stacktrace
+          ./gradlew ":ZalithLauncher:assemble$VARIANT" -Darch="$ARCH" --no-daemon --stacktrace
 
       - name: 收集并重命名产物
         id: apk
         shell: bash
         run: |
           set -euo pipefail
-          V=$(echo "${{ inputs.variant }}" | tr '[:upper:]' '[:lower:]')
+          VARIANT='${{ inputs.variant }}'
+          ARCH='${{ inputs.arch }}'
+          [ -n "$VARIANT" ] || VARIANT=Debug
+          [ -n "$ARCH" ] || ARCH=arm64
+          V=$(echo "$VARIANT" | tr '[:upper:]' '[:lower:]')
           SRC=$(find ZalithLauncher/build/outputs/apk/$V -name '*.apk' -print -quit)
           if [ -z "$SRC" ]; then
             echo "::error::没找到 APK，看看上面的构建日志"; exit 1
           fi
           VN=$(grep -E '^launcher_version_name=' ZalithLauncher/gradle.properties | cut -d= -f2)
-          OUT="ZPCL-Launcher-${VN}-${{ inputs.arch }}.apk"
+          OUT="ZPCL-Launcher-${VN}-${ARCH}-${V}.apk"
           cp "$SRC" "$OUT"
           ls -lh "$OUT"
           echo "path=$OUT" >> "$GITHUB_OUTPUT"
@@ -185,7 +203,7 @@ jobs:
       - name: 上传 Artifact
         uses: actions/upload-artifact@v7
         with:
-          name: zpcl-${{ inputs.arch }}-${{ inputs.variant }}
+          name: zpcl-apk
           path: ${{ steps.apk.outputs.path }}
           compression-level: 0
           retention-days: 14
@@ -197,12 +215,12 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          TAG="v${{ steps.apk.outputs.version }}-${{ inputs.arch }}"
+          TAG="v${{ steps.apk.outputs.version }}-bundle"
           NOTES="整合包：${{ inputs.payload_name }}（${{ inputs.arch }}，${{ inputs.variant }}）"
           if gh release view "$TAG" >/dev/null 2>&1; then
             gh release upload "$TAG" "${{ steps.apk.outputs.path }}" --clobber
           else
             gh release create "$TAG" "${{ steps.apk.outputs.path }}" \
-              --title "ZPCL Launcher ${{ steps.apk.outputs.version }} ${{ inputs.arch }}" \
+              --title "ZPCL Launcher ${{ steps.apk.outputs.version }} 整合包版" \
               --notes "$NOTES"
           fi

@@ -164,7 +164,10 @@ android {
         //
         // 标成不压缩后，asset 以 STORED 存放，open() 直接按 ZIP 里的偏移读，
         // 零解压、零内存峰值，也能被 zipalign 正常对齐。
-        noCompress += listOf("xz")
+        // 内置整合包 payload.zip 同理：它本身已是压缩包，再 deflate 一遍毫无收益，
+        // 却会让 aapt 在打包时把上 G 的数据整条流读进内存，还会让运行时 open()
+        // 拿不到原始偏移。保持 STORED 存放，解压侧直接顺序读。
+        noCompress += listOf("xz", "zip")
     }
 
     compileOptions {
