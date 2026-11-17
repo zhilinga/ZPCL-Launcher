@@ -275,6 +275,13 @@ class PclNavController(initial: PclSection = PclSection.Home) {
 
     /** 切换到某个一级版块。 */
     fun go(target: PclSection, index: Int = 0) {
+        // 整合包专属构建没有下载功能：任何指向「下载」的跳转都在这里被挡住，
+        // 免得留下一个能进、但里面什么都不能做的死页面。
+        if (!com.zalith.pcl.ui.pcl2.data.PclClientProfile.DOWNLOAD_ENABLED &&
+            target == PclSection.Download
+        ) {
+            return
+        }
         section = target
         leftIndex = index
         subStack.clear()
@@ -1035,7 +1042,10 @@ private fun PclTitleBar(nav: PclNavController) {
                 horizontalArrangement = Arrangement.spacedBy(PclDimens.navPillSpacing),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                PclSection.entries.filter { !PclSkinSettings.shouldHide(it.hiddenKey) }.forEach { section ->
+                PclSection.entries
+                .filter { it != PclSection.Download || com.zalith.pcl.ui.pcl2.data.PclClientProfile.DOWNLOAD_ENABLED }
+                .filter { !PclSkinSettings.shouldHide(it.hiddenKey) }
+                .forEach { section ->
                     PclPillButton(
                         text = section.label,
                         checked = nav.section == section,
@@ -1864,7 +1874,8 @@ private fun PclExtraButtons(
         }
     }
     LaunchedEffect(shouldShowBack) { backShown = shouldShowBack }
-    val showDownload = taskCount > 0 && nav.subPage?.title != PclStrings.LangPageNameDownloadManagement
+    val showDownload = com.zalith.pcl.ui.pcl2.data.PclClientProfile.DOWNLOAD_ENABLED &&
+            taskCount > 0 && nav.subPage?.title != PclStrings.LangPageNameDownloadManagement
 
     val buttons = buildList {
         if (shouldShowBack) add(Triple("回到顶部", PclIcons.extraBackToTop, { PclScrollSignal.request() }))
