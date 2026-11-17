@@ -199,8 +199,8 @@ object RuntimeProvisioner {
         val current = AllSettings.javaRuntime.getValue()
         if (current.isNotBlank() && current in names) return
 
-        // 整合包专属构建只随包发 Java 17，优先选它；没有的话退回版本最低的那个
-        val pick = runtimes.firstOrNull { it.name == Jre.JRE_17.jreName }?.name
+        // 内置整合包是 1.6.4（MITE），只能跑 Java 8：优先选它，没有的话退回版本最低的那个
+        val pick = runtimes.firstOrNull { it.name == Jre.JRE_8.jreName }?.name
             ?: runtimes.minByOrNull { it.javaVersion }?.name
             ?: return
 

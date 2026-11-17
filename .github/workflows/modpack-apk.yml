@@ -22,7 +22,19 @@ on:
   workflow_dispatch:
     inputs:
       payload_url:
-        description: '整合包 zip 直链（留空 = 用仓库内 assets/zpcl_bundle/payload.zip）'
+        description: '整合包 zip 直链（留空 = 用 payload_release_* 或仓库内 assets/zpcl_bundle/payload.zip）'
+        required: false
+        default: ''
+      payload_release_repo:
+        description: '私有中转仓库（如 zhilinga/zpcl-payload），给了就优先用它'
+        required: false
+        default: ''
+      payload_release_tag:
+        description: '中转仓库的 release tag（如 payload-v1），分片会自动拼接'
+        required: false
+        default: ''
+      payload_sha256:
+        description: '整包 sha256，拼完校验；留空则不校验'
         required: false
         default: ''
       payload_name:
@@ -99,21 +111,43 @@ jobs:
       - name: 注入整合包到 assets
         if: github.event_name == 'workflow_dispatch'
         shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.PAYLOAD_TOKEN }}
         run: |
           set -euo pipefail
           DEST=ZalithLauncher/src/main/assets/zpcl_bundle
           mkdir -p "$DEST"
 
+          REPO='${{ inputs.payload_release_repo }}'
+          TAG='${{ inputs.payload_release_tag }}'
           URL='${{ inputs.payload_url }}'
-          if [ -n "$URL" ]; then
+
+          if [ -n "$REPO" ] && [ -n "$TAG" ]; then
+            echo "::group::从私有中转拉取 $REPO@$TAG"
+            rm -rf /tmp/payload_parts && mkdir -p /tmp/payload_parts
+            gh release download "$TAG" -R "$REPO" -D /tmp/payload_parts --clobber
+            ls -l /tmp/payload_parts
+            cat /tmp/payload_parts/* > "$DEST/payload.zip"
+            echo "::endgroup::"
+          elif [ -n "$URL" ]; then
             echo "::group::下载 $URL"
             curl -fSL --retry 3 --retry-delay 5 --connect-timeout 20 -o "$DEST/payload.zip" "$URL"
             echo "::endgroup::"
           fi
 
           if [ ! -s "$DEST/payload.zip" ]; then
-            echo "::error::没有 payload.zip，也没给 payload_url，没什么可打包的"
+            echo "::error::没有 payload.zip，也没给 payload_url / payload_release_*，没什么可打包的"
             exit 1
+          fi
+
+          EXPECT='${{ inputs.payload_sha256 }}'
+          if [ -n "$EXPECT" ]; then
+            ACTUAL=$(sha256sum "$DEST/payload.zip" | cut -d' ' -f1)
+            if [ "$ACTUAL" != "$EXPECT" ]; then
+              echo "::error::sha256 不匹配：拼出来的是 $ACTUAL，期望 $EXPECT"
+              exit 1
+            fi
+            echo "sha256 校验通过：$ACTUAL"
           fi
 
           SIZE=$(stat -c%s "$DEST/payload.zip")
