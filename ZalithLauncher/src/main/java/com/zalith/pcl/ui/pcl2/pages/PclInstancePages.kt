@@ -1444,7 +1444,7 @@ private fun PclInstanceModPage(version: Version) {
                 // PanEmpty：MyCard（Center/Center，Margin=40）+ 标题 + 细线 + 说明 + 三个按钮
                 PclEmptyState(
                     title = "尚未安装 Mod",
-                    content = "你可以下载新的 Mod，或者从已经下载好的文件安装 Mod。",
+                    content = "可以从本地文件安装 Mod，或把 jar 直接放进实例的 mods 文件夹。",
                     modifier = Modifier.padding(40.dp),
                     buttonText = "从文件安装",
                     onButtonClick = { installPicker.launch(arrayOf("*/*")) },
@@ -1713,8 +1713,20 @@ private fun PclInstanceModUnavailablePage() {
  * 与 LiteLoader。落到 Zalith 上正好就是 `ModLoader.isLoader` 为真的那几个 ——
  * `OPTIFINE` 和一堆 `*_API` 的 `isLoader` 都是 false，与原版把它们排除在外一致。
  */
-private fun Version.hasModLoader(): Boolean =
-    getVersionInfo()?.loaderInfos?.any { it.loader.isLoader } == true
+private fun Version.hasModLoader(): Boolean {
+    if (getVersionInfo()?.loaderInfos?.any { it.loader.isLoader } == true) return true
+    // MITE 用的 Fish Mod Loader（net.xiaoyu233.fishmodloader）不在内置加载器表里，
+    // 清单解析出来是「原版实例」，于是 Mod 管理页被整页换成「该实例不可使用模组」。
+    // 这里回到版本 JSON 里找线索兜底：只要清单里出现 fishmodloader，
+    // 就认为这个实例能装模组。只影响这一页显不显示，不参与启动与 Java 选择。
+    return runCatching {
+        val json = File(getVersionPath(), "${getVersionName()}.json")
+        if (!json.isFile) return@runCatching false
+        val text = json.readText()
+        text.contains("fishmodloader", ignoreCase = true) ||
+                text.contains("xiaoyu233.fml", ignoreCase = true)
+    }.getOrDefault(false)
+}
 
 /**
  * `PageInstanceMod.CardSelect` —— 选中若干 Mod 之后从底部浮出的操作条。

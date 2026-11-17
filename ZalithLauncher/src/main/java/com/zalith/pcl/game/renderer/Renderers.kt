@@ -56,13 +56,11 @@ object Renderers {
             currentRenderer = null
         }
 
+        // 整合包专属构建：只保留 GL4ES 这一个渲染器。
+        // 其余几个类还在（启动/兼容代码里还按类型判断），只是不再注册进列表，
+        // 于是下拉框里只剩 GL4ES；插件仍然可以自己 addRenderer() 加回来。
         addRenderers(
-            NGGL4ESRenderer,
             GL4ESRenderer,
-            KopperZinkRenderer,
-            VirGLRenderer,
-            FreedrenoRenderer,
-            PanfrostRenderer
         )
     }
 

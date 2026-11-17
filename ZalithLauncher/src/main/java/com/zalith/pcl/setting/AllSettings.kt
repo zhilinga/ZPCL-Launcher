@@ -86,7 +86,7 @@ object AllSettings : SettingsRegistry() {
     /**
      * 分辨率
      */
-    val resolutionRatio = intSetting("resolutionRatio", 100, 25..300)
+    val resolutionRatio = intSetting("resolutionRatio", 214, 25..300)
 
     /**
      * 分辨率规则
@@ -111,7 +111,7 @@ object AllSettings : SettingsRegistry() {
     /**
      * 使用 SurfaceView 渲染
      */
-    val useSurfaceView = boolSetting("useSurfaceView", false)
+    val useSurfaceView = boolSetting("useSurfaceView", true)
 
     /**
      * 持续性能模式
