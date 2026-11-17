@@ -1446,13 +1446,12 @@ private fun PclInstanceModPage(version: Version) {
                     title = "尚未安装 Mod",
                     content = "你可以下载新的 Mod，或者从已经下载好的文件安装 Mod。",
                     modifier = Modifier.padding(40.dp),
-                    buttonText = "下载新 Mod",
-                    onButtonClick = { nav.go(PclSection.Download) },
+                    buttonText = "从文件安装",
+                    onButtonClick = { installPicker.launch(arrayOf("*/*")) },
                     // PageInstanceMod 的说明是 Margin="10,10,10,0"，按钮行 Margin="15,20,0,5"
                     contentPadding = PaddingValues(start = 10.dp, top = 10.dp, end = 10.dp, bottom = 0.dp),
                     buttonsTopPadding = 20.dp,
                     moreButtons = listOf(
-                        PclEmptyButton("从文件安装") { installPicker.launch(arrayOf("*/*")) },
                         PclEmptyButton("打开文件夹") { openFolder(context, modsDir) },
                     ),
                 )
@@ -1482,7 +1481,6 @@ private fun PclInstanceModPage(version: Version) {
             Row(horizontalArrangement = Arrangement.spacedBy(15.dp)) {
                 PclManageButton("打开文件夹", highlight = true) { openFolder(context, modsDir) }
                 PclManageButton("从文件安装") { installPicker.launch(arrayOf("*/*")) }
-                PclManageButton("下载新 Mod") { nav.go(PclSection.Download) }
                 // PageInstanceMod.xaml.vb:270 —— 「全选」的文字永不变化，点一下在
                 // 「全选中」与「全不选」之间切换（ChangeAllSelected(SelectedMods.Count < 列表数)），
                 // 选中后的操作都放在底部悬浮条上。
@@ -1698,10 +1696,6 @@ private fun PclInstanceModUnavailablePage() {
                     "如果你已经安装过了模组加载器，那么你很可能选择了错误的实例，" +
                     "请点击实例选择按钮切换实例。",
             modifier = Modifier.padding(40.dp),
-            buttonText = "转到下载页面",
-            // PageInstanceModDisabled.xaml.vb:4 —— 跳 Download 的安装子页，
-            // 也就是本文件里「下载新 Mod」走的同一条路。
-            onButtonClick = { nav.go(PclSection.Download) },
             moreButtons = listOf(
                 // PageInstanceModDisabled.xaml.vb:8 —— 原版先锚定 Launch 再进版本选择，
                 // 是为了让「选定版本」只回退一层。这里是 push，返回即回到这张卡，效果相同。
@@ -2512,8 +2506,6 @@ private fun PclSelectRight() {
                     "没有与「$keyword」匹配的版本。"
                 },
                 modifier = Modifier.align(Alignment.CenterHorizontally),
-                buttonText = PclStrings.LangSelectNoAvailableVersionDownloadGame,
-                onButtonClick = { nav.go(PclSection.Download) },
             )
 
             else -> cards.forEach { card ->

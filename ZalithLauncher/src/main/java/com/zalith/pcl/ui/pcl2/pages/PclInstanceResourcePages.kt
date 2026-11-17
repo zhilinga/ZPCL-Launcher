@@ -258,8 +258,6 @@ internal fun PclInstanceSchematicPage(version: Version) {
                     content = "未检测到 Litematica、WorldEdit、Schematica 或 Axiom。\n" +
                             "投影原理图由它们保存到 schematics 文件夹，请先安装一个投影 Mod。",
                     modifier = Modifier.padding(40.dp),
-                    buttonText = "下载 Mod",
-                    onButtonClick = { nav.go(PclSection.Download, 1) },
                     contentPadding = PaddingValues(start = 10.dp, top = 10.dp, end = 10.dp, bottom = 0.dp),
                     buttonsTopPadding = 20.dp,
                     moreButtons = listOf(PclEmptyButton("打开文件夹") { openFolder(context, dir) }),
@@ -536,15 +534,8 @@ private fun PclInstanceFilePage(
                     title = emptyTitle,
                     content = emptyContent,
                     modifier = Modifier.padding(40.dp),
-                    // 有下载入口时把「下载新的」放主按钮位，否则主按钮就是「打开文件夹」
-                    buttonText = downloadText ?: "打开文件夹",
-                    onButtonClick = {
-                        if (downloadIndex != null && downloadText != null) {
-                            nav.go(PclSection.Download, downloadIndex)
-                        } else {
-                            openFolder(context, dir)
-                        }
-                    },
+                    buttonText = "打开文件夹",
+                    onButtonClick = { openFolder(context, dir) },
                     contentPadding = PaddingValues(start = 10.dp, top = 10.dp, end = 10.dp, bottom = 0.dp),
                     buttonsTopPadding = 20.dp,
                     moreButtons = buildList {
@@ -586,9 +577,6 @@ private fun PclInstanceFilePage(
                     }
                 }
                 PclManageButton("刷新") { token++ }
-                if (downloadIndex != null && downloadText != null) {
-                    PclManageButton(downloadText) { nav.go(PclSection.Download, downloadIndex) }
-                }
             }
         }
         Spacer(Modifier.height(PclDimens.cardGap))

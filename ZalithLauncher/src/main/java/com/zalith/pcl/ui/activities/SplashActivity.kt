@@ -61,6 +61,7 @@ import com.zalith.pcl.game.download.engine.DownloadEngine
 import com.zalith.pcl.game.download.engine.DownloadRequest
 import com.zalith.pcl.game.download.engine.DownloadStats
 import com.zalith.pcl.game.download.engine.SegmentedDownloader
+import com.zalith.pcl.game.provision.UnpackGamePayloadTask
 import com.zalith.pcl.setting.AllSettings
 import com.zalith.pcl.ui.base.BaseAppCompatActivity
 import com.zalith.pcl.ui.pcl2.components.PclConfirmDialog
@@ -279,6 +280,17 @@ class SplashActivity : BaseAppCompatActivity() {
                     "JNA",
                     getString(R.string.unpack_screen_jna),
                     jnaTask
+                )
+            )
+        }
+        //随安装包内置的整合包：解压到游戏目录后直接就是「可启动」状态
+        val payloadTask = UnpackGamePayloadTask(this@SplashActivity)
+        if (!payloadTask.isCheckFailed()) {
+            unpackItems.add(
+                InstallableItem(
+                    payloadTask.displayName(),
+                    "内置整合包，首次启动自动解压，完成后可直接开始游戏",
+                    payloadTask
                 )
             )
         }

@@ -1,0 +1,260 @@
+name: 整合包专属 APK
+
+# ── 这是什么 ─────────────────────────────────────────────────────────────
+# 给「整合包专属启动器」用的打包流水线：
+#   1. 把整合包 / 预装游戏目录的 zip 塞进 APK 的 assets/zpcl_bundle/
+#   2. 顺手写一份 payload.json（名字、字节数、sha256），App 首启照它校验并解压
+#   3. 编译出单架构 APK，可选直接发 Release
+#
+# 触发方式：
+#   · 手动（推荐）：Actions → 整合包专属 APK → Run workflow，填 payload_url
+#   · push：只做编译验证，不注入 payload，产物是普通启动器
+#
+# 需要在仓库 Settings → Secrets and variables → Actions 里配：
+#   KEYSTORE_BASE64   ZalithLauncher/zpcl_release.jks 的 base64（正式签名，强烈建议配）
+#   STORE_PASSWORD    keystore 口令
+#   KEY_PASSWORD      key 口令
+#   OAUTH_CLIENT_ID   正版登录用，可留空
+#   CURSEFORGE_API_KEY 可留空（留空则资源搜索只能走 Modrinth）
+# 没配 KEYSTORE_BASE64 时会现场生成一次性密钥，产物只能自用，覆盖安装必冲突。
+
+on:
+  workflow_dispatch:
+    inputs:
+      payload_url:
+        description: '整合包 zip 直链（留空 = 用 payload_release_* 或仓库内 assets/zpcl_bundle/payload.zip）'
+        required: false
+        default: ''
+      payload_release_repo:
+        description: '私有中转仓库（如 zhilinga/zpcl-payload），给了就优先用它'
+        required: false
+        default: ''
+      payload_release_tag:
+        description: '中转仓库的 release tag（如 payload-v1），分片会自动拼接'
+        required: false
+        default: ''
+      payload_sha256:
+        description: '整包 sha256，拼完校验；留空则不校验'
+        required: false
+        default: ''
+      payload_name:
+        description: '整合包显示名（写进 payload.json）'
+        required: false
+        default: '内置整合包'
+      arch:
+        description: 'CPU 架构'
+        required: true
+        type: choice
+        options: [arm64, arm, all, x86, x86_64]
+        default: arm64
+      variant:
+        description: '构建类型'
+        required: true
+        type: choice
+        options: [Release, Debug]
+        default: Release
+      version_name:
+        description: 'versionName（留空沿用 gradle.properties）'
+        required: false
+        default: ''
+      version_code:
+        description: 'versionCode（留空沿用；覆盖安装必须递增）'
+        required: false
+        default: ''
+      publish_release:
+        description: '构建完成后发到 Releases'
+        required: true
+        type: boolean
+        default: false
+  push:
+    branches:
+      - 'feat/**'
+    paths:
+      - 'ZalithLauncher/src/main/java/**'
+      - 'ZalithLauncher/build.gradle.kts'
+      - '.github/workflows/modpack-apk.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: modpack-apk-
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          submodules: recursive
+          fetch-depth: 1
+
+      - name: 清理磁盘（Android 构建很吃空间）
+        run: |
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/lib/android/sdk/ndk/2[0-4].* 2>/dev/null || true
+          df -h /
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v5
+        with:
+          add-job-summary: on-failure
+
+      - name: 注入整合包到 assets
+        if: github.event_name == 'workflow_dispatch'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.PAYLOAD_TOKEN }}
+        run: |
+          set -euo pipefail
+          DEST=ZalithLauncher/src/main/assets/zpcl_bundle
+          mkdir -p "$DEST"
+
+          REPO='${{ inputs.payload_release_repo }}'
+          TAG='${{ inputs.payload_release_tag }}'
+          URL='${{ inputs.payload_url }}'
+
+          if [ -n "$REPO" ] && [ -n "$TAG" ]; then
+            echo "::group::从私有中转拉取 $REPO@$TAG"
+            rm -rf /tmp/payload_parts && mkdir -p /tmp/payload_parts
+            gh release download "$TAG" -R "$REPO" -D /tmp/payload_parts --clobber
+            ls -l /tmp/payload_parts
+            cat /tmp/payload_parts/* > "$DEST/payload.zip"
+            echo "::endgroup::"
+          elif [ -n "$URL" ]; then
+            echo "::group::下载 $URL"
+            curl -fSL --retry 3 --retry-delay 5 --connect-timeout 20 -o "$DEST/payload.zip" "$URL"
+            echo "::endgroup::"
+          fi
+
+          if [ ! -s "$DEST/payload.zip" ]; then
+            echo "::error::没有 payload.zip，也没给 payload_url / payload_release_*，没什么可打包的"
+            exit 1
+          fi
+
+          EXPECT='${{ inputs.payload_sha256 }}'
+          if [ -n "$EXPECT" ]; then
+            ACTUAL=$(sha256sum "$DEST/payload.zip" | cut -d' ' -f1)
+            if [ "$ACTUAL" != "$EXPECT" ]; then
+              echo "::error::sha256 不匹配：拼出来的是 $ACTUAL，期望 $EXPECT"
+              exit 1
+            fi
+            echo "sha256 校验通过：$ACTUAL"
+          fi
+
+          SIZE=$(stat -c%s "$DEST/payload.zip")
+          SUM=$(sha256sum "$DEST/payload.zip" | cut -d' ' -f1)
+          printf '{\n  "name": "%s",\n  "size": %s,\n  "sha256": "%s",\n  "arch": "%s"\n}\n' \
+            "${{ inputs.payload_name }}" "$SIZE" "$SUM" "${{ inputs.arch }}" > "$DEST/payload.json"
+
+          echo "--- payload.json ---"
+          cat "$DEST/payload.json"
+          du -sh "$DEST"
+
+      - name: 准备签名密钥
+        shell: bash
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          SP="${STORE_PASSWORD:-zpcltmp123}"
+          KP="${KEY_PASSWORD:-zpcltmp123}"
+          if [ -n "${KEYSTORE_BASE64:-}" ]; then
+            printf '%s' "$KEYSTORE_BASE64" | base64 -d > ZalithLauncher/zpcl_release.jks
+            echo "已从 secret 还原正式签名密钥"
+          else
+            echo "::warning::没有 KEYSTORE_BASE64，改用一次性临时密钥 —— 产物只能自用，覆盖安装会签名冲突"
+            keytool -genkeypair -v -keystore ZalithLauncher/zpcl_release.jks -alias zpcl \
+              -keyalg RSA -keysize 2048 -validity 10000 \
+              -storepass "$SP" -keypass "$KP" -dname "CN=ZPCL CI Only" >/dev/null 2>&1
+          fi
+          keytool -list -keystore ZalithLauncher/zpcl_release.jks -storepass "$SP" | head -3
+
+      - name: 注入版本号
+        if: inputs.version_name != '' || inputs.version_code != ''
+        shell: bash
+        run: |
+          set -euo pipefail
+          P=ZalithLauncher/gradle.properties
+          if [ -n "${{ inputs.version_name }}" ]; then
+            sed -i "s|^launcher_version_name=.*|launcher_version_name=${{ inputs.version_name }}|" "$P"
+          fi
+          if [ -n "${{ inputs.version_code }}" ]; then
+            sed -i "s|^launcher_version_code=.*|launcher_version_code=${{ inputs.version_code }}|" "$P"
+          fi
+          grep -E '^launcher_version_(name|code)=' "$P"
+
+      - name: 构建 APK
+        shell: bash
+        env:
+          STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          OAUTH_CLIENT_ID: ${{ secrets.OAUTH_CLIENT_ID }}
+          CURSEFORGE_API_KEY: ${{ secrets.CURSEFORGE_API_KEY }}
+        run: |
+          set -euo pipefail
+          export STORE_PASSWORD="${STORE_PASSWORD:-zpcltmp123}"
+          export KEY_PASSWORD="${KEY_PASSWORD:-zpcltmp123}"
+          VARIANT='${{ inputs.variant }}'
+          ARCH='${{ inputs.arch }}'
+          [ -n "$VARIANT" ] || VARIANT=Debug
+          [ -n "$ARCH" ] || ARCH=arm64
+          echo "variant=$VARIANT arch=$ARCH"
+          chmod +x gradlew
+          ./gradlew ":ZalithLauncher:assemble$VARIANT" -Darch="$ARCH" --no-daemon --stacktrace
+
+      - name: 收集并重命名产物
+        id: apk
+        shell: bash
+        run: |
+          set -euo pipefail
+          VARIANT='${{ inputs.variant }}'
+          ARCH='${{ inputs.arch }}'
+          [ -n "$VARIANT" ] || VARIANT=Debug
+          [ -n "$ARCH" ] || ARCH=arm64
+          V=$(echo "$VARIANT" | tr '[:upper:]' '[:lower:]')
+          SRC=$(find ZalithLauncher/build/outputs/apk/$V -name '*.apk' -print -quit)
+          if [ -z "$SRC" ]; then
+            echo "::error::没找到 APK，看看上面的构建日志"; exit 1
+          fi
+          VN=$(grep -E '^launcher_version_name=' ZalithLauncher/gradle.properties | cut -d= -f2)
+          OUT="ZPCL-Launcher-${VN}-${ARCH}-${V}.apk"
+          cp "$SRC" "$OUT"
+          ls -lh "$OUT"
+          echo "path=$OUT" >> "$GITHUB_OUTPUT"
+          echo "version=$VN" >> "$GITHUB_OUTPUT"
+
+      - name: 上传 Artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: zpcl-apk
+          path: ${{ steps.apk.outputs.path }}
+          compression-level: 0
+          retention-days: 14
+
+      - name: 发布 Release
+        if: inputs.publish_release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          TAG="v${{ steps.apk.outputs.version }}-bundle"
+          NOTES="整合包：${{ inputs.payload_name }}（${{ inputs.arch }}，${{ inputs.variant }}）"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" "${{ steps.apk.outputs.path }}" --clobber
+          else
+            gh release create "$TAG" "${{ steps.apk.outputs.path }}" \
+              --title "ZPCL Launcher ${{ steps.apk.outputs.version }} 整合包版" \
+              --notes "$NOTES"
+          fi

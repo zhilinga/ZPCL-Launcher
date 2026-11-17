@@ -144,6 +144,7 @@ import com.zalith.pcl.ui.pcl2.data.LocalPclRuntime
 import com.zalith.pcl.ui.pcl2.data.PclAppearance
 import com.zalith.pcl.ui.pcl2.data.PclLeftLabels
 import com.zalith.pcl.ui.pcl2.data.PclThemeState
+import com.zalith.pcl.ui.pcl2.data.PclClientProfile
 import com.zalith.pcl.ui.pcl2.data.PclHiddenKeys
 import com.zalith.pcl.ui.pcl2.data.PclLoginSettings
 import com.zalith.pcl.ui.pcl2.data.PclLogoType
@@ -212,6 +213,16 @@ enum class PclSection(val label: String, val icon: ImageVector, val hiddenKey: S
 }
 
 /**
+ * 这个构建里整块摘掉的版块。
+ *
+ * 只从导航栏里「藏」起来是不够的：页面里还有不少地方直接 `nav.go(PclSection.X)`，
+ * 藏了之后点下去会进到一个空壳子。所以导航栏过滤、跳转拦截都走这一个判断。
+ */
+internal fun PclSection.isRemovedFromThisBuild(): Boolean =
+    (this == PclSection.Download && !PclClientProfile.DOWNLOAD_ENABLED) ||
+        (this == PclSection.Other && !PclClientProfile.MORE_SECTION_ENABLED)
+
+/**
  * 子页面（对应 PCL 的 `PanTitleInner`：标题栏显示返回按钮）。
  *
  * [leftContent] 非空时，子页面自带一个白色左栏
@@ -275,6 +286,10 @@ class PclNavController(initial: PclSection = PclSection.Home) {
 
     /** 切换到某个一级版块。 */
     fun go(target: PclSection, index: Int = 0) {
+        // 被整块摘掉的版块：任何跳转都在这里挡住，免得留下一个能进、但里面什么都没用的死页面。
+        if (target.isRemovedFromThisBuild()) {
+            return
+        }
         section = target
         leftIndex = index
         subStack.clear()
@@ -1035,7 +1050,10 @@ private fun PclTitleBar(nav: PclNavController) {
                 horizontalArrangement = Arrangement.spacedBy(PclDimens.navPillSpacing),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                PclSection.entries.filter { !PclSkinSettings.shouldHide(it.hiddenKey) }.forEach { section ->
+                PclSection.entries
+                .filter { !it.isRemovedFromThisBuild() }
+                .filter { !PclSkinSettings.shouldHide(it.hiddenKey) }
+                .forEach { section ->
                     PclPillButton(
                         text = section.label,
                         checked = nav.section == section,
@@ -1864,7 +1882,8 @@ private fun PclExtraButtons(
         }
     }
     LaunchedEffect(shouldShowBack) { backShown = shouldShowBack }
-    val showDownload = taskCount > 0 && nav.subPage?.title != PclStrings.LangPageNameDownloadManagement
+    val showDownload = com.zalith.pcl.ui.pcl2.data.PclClientProfile.DOWNLOAD_ENABLED &&
+            taskCount > 0 && nav.subPage?.title != PclStrings.LangPageNameDownloadManagement
 
     val buttons = buildList {
         if (shouldShowBack) add(Triple("回到顶部", PclIcons.extraBackToTop, { PclScrollSignal.request() }))
