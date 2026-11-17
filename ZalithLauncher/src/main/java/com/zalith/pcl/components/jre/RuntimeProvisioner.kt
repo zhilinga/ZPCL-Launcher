@@ -199,8 +199,8 @@ object RuntimeProvisioner {
         val current = AllSettings.javaRuntime.getValue()
         if (current.isNotBlank() && current in names) return
 
-        // 优先内置 Java 8：它覆盖面最广（1.7 ~ 1.12 都能跑），也是原来写死的默认值
-        val pick = runtimes.firstOrNull { it.name == Jre.JRE_8.jreName }?.name
+        // 整合包专属构建只随包发 Java 17，优先选它；没有的话退回版本最低的那个
+        val pick = runtimes.firstOrNull { it.name == Jre.JRE_17.jreName }?.name
             ?: runtimes.minByOrNull { it.javaVersion }?.name
             ?: return
 

@@ -24,4 +24,10 @@ object PclClientProfile {
      * 实例页里原本指向「下载新 Mod」的按钮改成「从文件安装」或直接去掉。
      */
     const val DOWNLOAD_ENABLED = false
+
+    /**
+     * 是否保留「更多」版块（帮助 / 关于与鸣谢 / 百宝箱 / 反馈 / 社区）。
+     * 整合包专属构建整块摘掉：玩家只需要进去点启动，不需要看帮助文档和社区入口。
+     */
+    const val MORE_SECTION_ENABLED = false
 }

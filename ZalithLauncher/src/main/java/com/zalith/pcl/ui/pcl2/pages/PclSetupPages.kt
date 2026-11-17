@@ -1315,10 +1315,8 @@ fun PclSetupUiPage() {
         // 留了个「连点 10 次」的手势，把这些入口**临时**放出来（见 `PclHiddenPeekGesture`）。
         PclCard(modifier = Modifier.fillMaxWidth(), title = PclStrings.LangSetFuncHidden) {
             Column {
-                PclSkinHiddenCheck(key = PclHiddenKeys.DOWNLOAD, label = PclStrings.LangSetFuncHiddenDownload)
                 PclSkinHiddenCheck(key = PclHiddenKeys.LINK, label = PclStrings.LangSetFuncHiddenLink)
                 PclSkinHiddenCheck(key = PclHiddenKeys.SETUP, label = PclStrings.LangSetFuncHiddenSettings)
-                PclSkinHiddenCheck(key = PclHiddenKeys.OTHER, label = PclStrings.LangSetFuncHiddenMore)
                 Spacer(Modifier.height(6.dp))
                 PclText(
                     text = PclStrings.LangSetFuncHiddenSettingsSubPage,
@@ -1329,19 +1327,9 @@ fun PclSetupUiPage() {
                 PclSkinHiddenCheck(PclHiddenKeys.SETUP_LINK, PclStrings.LangSetFuncHiddenSettingsLink)
                 PclSkinHiddenCheck(PclHiddenKeys.SETUP_UI, PclStrings.LangSetFuncHiddenSettingsPersonalize)
                 PclSkinHiddenCheck(PclHiddenKeys.SETUP_SYSTEM, PclStrings.LangSetFuncHiddenSettingsLaunch)
-                Spacer(Modifier.height(6.dp))
-                PclText(
-                    text = PclStrings.LangSetFuncHiddenMoreSubPage,
-                    color = pclPalette.gray2,
-                    modifier = Modifier.padding(vertical = 4.dp),
-                )
-                PclSkinHiddenCheck(PclHiddenKeys.OTHER_HELP, PclStrings.LangSetFuncHiddenMoreHelp)
-                PclSkinHiddenCheck(PclHiddenKeys.OTHER_ABOUT, PclStrings.LangSetFuncHiddenMoreAbout)
-                PclSkinHiddenCheck(PclHiddenKeys.OTHER_TOOLS, PclStrings.LangSetFuncHiddenMoreTool)
-                PclSkinHiddenCheck(PclHiddenKeys.OTHER_FEEDBACK, PclStrings.LangSetFuncHiddenMoreFeedback)
-                PclSkinHiddenCheck(PclHiddenKeys.OTHER_VOTE, PclStrings.LangSetFuncHiddenMoreVote)
+
                 PclHint(
-                    text = "勾上就把对应入口藏起来（顶部导航的那一排、以及设置/更多的子页面）。" +
+                    text = "勾上就把对应入口藏起来（顶部导航的那一排、以及设置的子页面）。" +
                             "「主页面」不允许隐藏，否则就没地方可去了。",
                     theme = PclHintTheme.Blue,
                 )
@@ -1400,80 +1388,6 @@ fun PclSetupSystemPage() {
                             "之后可以在原生界面的「设置 → 启动器 → 切换到 PCL2 界面」随时回到这里。" +
                             "（桌面只保留一个图标，按这个开关决定进哪个界面。）",
                     theme = PclHintTheme.Blue,
-                )
-            }
-        }
-
-        Spacer(Modifier.height(PclDimens.cardGap))
-
-        // ---- 下载源
-        PclCard( modifier = Modifier.fillMaxWidth(),title = PclStrings.LangPageSetupSystemDownload) {
-            Column {
-                SettingCombo(
-                    label = "游戏内容下载源",
-                    items = MirrorSourceType.entries.toList(),
-                    selected = AllSettings.gameDownloadSource.state,
-                    labelOf = { context.getString(it.textRes) },
-                    onSelect = { AllSettings.gameDownloadSource.save(it) },
-                )
-                SettingCombo(
-                    label = "资源平台下载源",
-                    items = MirrorSourceType.entries.toList(),
-                    selected = AllSettings.assetPlatformSource.state,
-                    labelOf = { context.getString(it.textRes) },
-                    onSelect = { AllSettings.assetPlatformSource.save(it) },
-                )
-                SettingSliderRow(
-                    label = PclStrings.LangPageSetupSystemDownloadThread,
-                    unit = AllSettings.downloadThreads,
-                    min = 1,
-                    max = 128,
-                )
-                Spacer(Modifier.height(6.dp))
-                PclHint(
-                    text = "\u201c自动\u201d会按当前网络环境选择初始下载源，并在失败时自适应换源。",
-                    theme = PclHintTheme.Blue,
-                )
-                PclHint(
-                    text = "同时下载的文件数，默认 32（PCL2 同款滑条）。网络差或设备较慢时调小，"
-                            + "能减少超时和失败重试；网络快、机器好可以调大。改完下一次下载生效。",
-                    theme = PclHintTheme.Blue,
-                )
-            }
-        }
-
-        Spacer(Modifier.height(PclDimens.cardGap))
-
-        // ---- Mod 与资源搜索平台
-        PclCard( modifier = Modifier.fillMaxWidth(),title = PclStrings.LangPageSetupSystemDownloadModTitle) {
-            Column {
-                SettingCombo(
-                    label = "搜索 Mod 的平台",
-                    items = Platform.entries.toList(),
-                    selected = AllSettings.searchModPlatform.state,
-                    labelOf = { it.displayName },
-                    onSelect = { AllSettings.searchModPlatform.save(it) },
-                )
-                SettingCombo(
-                    label = "搜索整合包的平台",
-                    items = Platform.entries.toList(),
-                    selected = AllSettings.searchModpackPlatform.state,
-                    labelOf = { it.displayName },
-                    onSelect = { AllSettings.searchModpackPlatform.save(it) },
-                )
-                SettingCombo(
-                    label = "搜索资源包的平台",
-                    items = Platform.entries.toList(),
-                    selected = AllSettings.searchResourcePackPlatform.state,
-                    labelOf = { it.displayName },
-                    onSelect = { AllSettings.searchResourcePackPlatform.save(it) },
-                )
-                SettingCombo(
-                    label = "搜索光影的平台",
-                    items = Platform.entries.toList(),
-                    selected = AllSettings.searchShadersPlatform.state,
-                    labelOf = { it.displayName },
-                    onSelect = { AllSettings.searchShadersPlatform.save(it) },
                 )
             }
         }

@@ -20,6 +20,14 @@ package com.zalith.pcl.components.jre
 
 import com.zalith.pcl.R
 
+/**
+ * 内置 Java 运行库。
+ *
+ * ⚠️ 整合包专属构建**只随包发 jre-17**：其余三个的 assets 目录已被删掉，
+ * 它们的解压任务在 [com.zalith.pcl.components.jre.UnpackJreTask] 初始化时
+ * 找不到架构包，会被自动排除，不会出现在启动页的安装列表里。
+ * 枚举本身保留，是因为 Forge 安装器、JVM 重试等代码还按名字引用它们。
+ */
 enum class Jre(val jreName: String, val jrePath: String, val summary: Int, val majorVersion: Int) {
     JRE_8("Internal-8", "runtimes/jre-8", R.string.unpack_screen_jre8, 8),
     JRE_17("Internal-17", "runtimes/jre-17", R.string.unpack_screen_jre17, 17),
