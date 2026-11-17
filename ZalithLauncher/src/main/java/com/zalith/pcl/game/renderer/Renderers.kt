@@ -56,10 +56,10 @@ object Renderers {
             currentRenderer = null
         }
 
-        // 整合包专属构建：只保留 GL4ES 这一个渲染器。
-        // 其余几个类还在（启动/兼容代码里还按类型判断），只是不再注册进列表，
-        // 于是下拉框里只剩 GL4ES；插件仍然可以自己 addRenderer() 加回来。
+        // 诊断版：把 NG-GL4ES 也放回来，用来判断「云层渲染异常」是 GL4ES 独有
+        // 还是 MITE 的云层代码本身在 GL 管线下就画不对。
         addRenderers(
+            NGGL4ESRenderer,
             GL4ESRenderer,
         )
     }
