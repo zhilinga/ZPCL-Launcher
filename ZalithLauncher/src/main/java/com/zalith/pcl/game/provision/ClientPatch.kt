@@ -28,7 +28,7 @@ private const val TAG = "ClientPatch"
  */
 object ClientPatch {
     /** 补丁版本：内容改了就把这个数字 +1，下次启动会重新应用。 */
-    const val VERSION = "1"
+    const val VERSION = "2"
 
     private const val MARKER_FILE = ".zpcl_client_patch"
 
@@ -56,10 +56,37 @@ object ClientPatch {
             }
             patchOptions(file)
         }
+        val cleaned = cleanJunk(gameHome)
         marker.writeText(VERSION)
         Logger.info(TAG, "客户端默认配置已应用，共 " + targets.size + " 份 options.txt")
     }.onFailure {
         Logger.warning(TAG, "客户端默认配置应用失败", it)
+    }
+
+    /** 删掉游戏目录里的崩溃转储、旧日志、写锁。返回 (数量, 字节)。 */
+    private fun cleanJunk(root: File): Pair<Int, Long> {
+        var count = 0
+        var bytes = 0L
+        fun junk(file: File): Boolean {
+            val name = file.name.lowercase()
+            return name.endsWith(".lck") ||
+                    name.startsWith("hs_err_pid") ||
+                    name.startsWith("output-client") ||
+                    name.startsWith("output-server") ||
+                    name.startsWith("suspicious.log") ||
+                    file.parentFile?.name?.lowercase() in setOf("logs", "crash-reports")
+        }
+        runCatching {
+            root.walkTopDown().filter { it.isFile && junk(it) }.toList().forEach { file ->
+                val size = file.length()
+                if (runCatching { file.delete() }.getOrDefault(false)) {
+                    count++
+                    bytes += size
+                }
+            }
+        }
+        if (count > 0) Logger.info(TAG, "已清理无用文件 " + count + " 个，共 " + (bytes / 1024) + " KB")
+        return count to bytes
     }
 
     private fun patchOptions(file: File) {

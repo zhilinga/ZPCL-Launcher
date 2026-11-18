@@ -132,6 +132,10 @@ class UnpackGamePayloadTask(private val context: Context) : AbstractUnpackTask()
                     val entry = zip.nextEntry ?: break
 
                     val relative = normalizeEntryName(entry.name)
+                    if (relative.isNotEmpty() && isJunkFile(relative)) {
+                        zip.closeEntry()
+                        continue
+                    }
                     val target = if (relative.isEmpty()) null else File(home, relative)
                     if (target == null || !isInside(home, target)) {
                         if (relative.isNotEmpty()) {
@@ -204,6 +208,24 @@ class UnpackGamePayloadTask(private val context: Context) : AbstractUnpackTask()
         name = name.removePrefix(".minecraft/")
         if (name == ".minecraft") return ""
         return name.trimEnd('/')
+    }
+
+    /**
+     * 整合包里带出来的无用文件：崩溃转储、旧日志、世界写锁、崩溃报告。
+     * 这些东西对玩家没有任何用处，只会白占空间（这份包里光 hs_err 就 33 MB）。
+     */
+    private fun isJunkFile(relative: String): Boolean {
+        val name = relative.lowercase()
+        val fileName = name.substringAfterLast('/')
+        return name.startsWith("logs/") ||
+                name.contains("/logs/") ||
+                name.startsWith("crash-reports/") ||
+                name.contains("/crash-reports/") ||
+                fileName.endsWith(".lck") ||
+                fileName.startsWith("hs_err_pid") ||
+                fileName.startsWith("output-client") ||
+                fileName.startsWith("output-server") ||
+                fileName.startsWith("suspicious.log")
     }
 
     /** 防止 zip slip：条目必须落在游戏目录内部。 */
