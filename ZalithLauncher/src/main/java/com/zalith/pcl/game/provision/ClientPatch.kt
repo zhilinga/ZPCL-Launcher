@@ -94,6 +94,9 @@ object ClientPatch {
 
         // 云：关（1.6.4 在 GL4ES 下云层会渲染成巨型四边形）
         putOrReplace(lines, "clouds", "false")
+        // 视距：0=远 1=中 2=近 3=最小。这份整合包默认是「远」，手机上负担很重，
+        // 降到「中」能明显提帧；玩家想要更远可以在「选项 → 视频设置」里再调回来。
+        putOrReplace(lines, "viewDistance", "1")
         // 基础材质包：只有没有这一行时才补，用户自己选过就不动
         if (lines.none { it.startsWith("resourcePacks:") }) {
             lines.add("resourcePacks:[\"" + BASE_PACK + "\"]")
