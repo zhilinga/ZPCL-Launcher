@@ -1346,6 +1346,7 @@ private fun PclBody(nav: PclNavController) {
                                     PclSection.Home -> PclHomeLeft(nav)
                                     PclSection.Setup -> PclSetupLeft(nav)
                                     PclSection.Link -> Unit // 联机页无左栏
+                                    else -> Unit // 下载 / 更多：本构建已整块摘掉
                                 }
                             }
                         }
@@ -1376,6 +1377,7 @@ private fun PclBody(nav: PclNavController) {
                                 PclSection.Home -> PclHomeRight(nav)
                                 PclSection.Link -> PclLinkRight(nav)
                                 PclSection.Setup -> PclSetupRight(nav)
+                                else -> Unit // 下载 / 更多：本构建已整块摘掉
                             }
                         }
                     }
