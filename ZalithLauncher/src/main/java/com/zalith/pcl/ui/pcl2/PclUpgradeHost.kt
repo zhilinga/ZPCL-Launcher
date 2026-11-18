@@ -35,6 +35,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.zalith.pcl.BuildConfig
 import com.zalith.pcl.setting.AllSettings
 import com.zalith.pcl.ui.pcl2.components.PclConfirmDialog
+import com.zalith.pcl.ui.pcl2.pages.openLink
 import com.zalith.pcl.ui.pcl2.components.PclSelectDialog
 import com.zalith.pcl.ui.pcl2.components.PclUpgradeDialog
 import com.zalith.pcl.ui.pcl2.components.PclUpgradeDownloadDialog

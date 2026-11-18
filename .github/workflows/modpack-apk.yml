@@ -83,7 +83,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: modpack-apk-
+  group: modpack-apk-${{ github.ref }}-${{ github.event_name }}
   cancel-in-progress: true
 
 jobs:
