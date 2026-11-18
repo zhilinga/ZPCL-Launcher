@@ -24,7 +24,7 @@ val zalithPackageName = "com.zalith.pcl"
  * 代价（改过一次就回不去）：新包是一个**全新应用**，旧版本的数据（MMKV、实例、登录态、
  * 外部 files 目录）不会跟过来，也不能覆盖升级 —— 老用户必须先卸载再装。
  */
-val appIdName = "com.zpcl.launcher"
+val appIdName = "com.zhilinga.MITElauncher"
 val launcherAPPName = project.findProperty("launcher_app_name") as? String ?: error("The \"launcher_app_name\" property is not set in gradle.properties.")
 val launcherName = project.findProperty("launcher_name") as? String ?: error("The \"launcher_name\" property is not set in gradle.properties.")
 val launcherShortName = project.findProperty("launcher_short_name") as? String ?: error("The \"launcher_short_name\" property is not set in gradle.properties.")
