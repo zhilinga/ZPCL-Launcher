@@ -61,6 +61,7 @@ import com.zalith.pcl.game.download.engine.DownloadEngine
 import com.zalith.pcl.game.download.engine.DownloadRequest
 import com.zalith.pcl.game.download.engine.DownloadStats
 import com.zalith.pcl.game.download.engine.SegmentedDownloader
+import com.zalith.pcl.game.provision.ClientPatch
 import com.zalith.pcl.game.provision.UnpackGamePayloadTask
 import com.zalith.pcl.setting.AllSettings
 import com.zalith.pcl.ui.base.BaseAppCompatActivity
@@ -249,6 +250,8 @@ class SplashActivity : BaseAppCompatActivity() {
     }
 
     private fun initUnpackItems() {
+        // 游戏侧默认配置（关云、启用基础材质包）：就地补行，只补缺的
+        runCatching { ClientPatch.apply(this@SplashActivity) }
         Components.entries.forEach { component ->
             val task = UnpackComponentsTask(this@SplashActivity, component)
             if (!task.isCheckFailed()) {

@@ -572,8 +572,7 @@ private fun setRendererEnv(envMap: MutableMap<String, String>) {
 
     if (rendererId.startsWith("opengles2")) {
         envMap["LIBGL_ES"] = "2"
-        // 诊断：mipmap 关掉，用来验证云层/远景的异常是不是 gl4es 的 mipmap 生成导致
-        envMap["LIBGL_MIPMAP"] = "0"
+        envMap["LIBGL_MIPMAP"] = "3"
         envMap["LIBGL_NOERROR"] = "1"
         envMap["LIBGL_NOINTOVLHACK"] = "1"
         envMap["LIBGL_NORMALIZE"] = "1"

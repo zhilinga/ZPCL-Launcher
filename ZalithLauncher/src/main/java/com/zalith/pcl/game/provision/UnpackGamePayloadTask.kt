@@ -65,7 +65,7 @@ data class PayloadMeta(
  * 判定是否已解压靠游戏目录根下的 [MARKER_NAME]：内容与 payload.json 的
  * sha256 一致就算完成；不一致（换了新整合包）则重新解压。
  */
-class UnpackGamePayloadTask(context: Context) : AbstractUnpackTask() {
+class UnpackGamePayloadTask(private val context: Context) : AbstractUnpackTask() {
     private val assetManager = context.applicationContext.assets
     private var initFailed = false
     private val meta: PayloadMeta?
@@ -166,6 +166,9 @@ class UnpackGamePayloadTask(context: Context) : AbstractUnpackTask() {
 
         markerFile().writeText(m.sha256)
         Logger.info(TAG, "内置整合包解压完成：$entries 项，${written / 1024 / 1024} MB")
+
+        // 解压完立刻补上游戏侧默认配置（关云、启用基础材质包）
+        ClientPatch.apply(context)
 
         //解压完让版本列表认识这份游戏，并把它设为当前版本 —— 用户点开就是「启动游戏」
         updateMessage("正在识别游戏版本…")
