@@ -86,7 +86,7 @@ object AllSettings : SettingsRegistry() {
     /**
      * 分辨率
      */
-    val resolutionRatio = intSetting("resolutionRatio", 214, 25..300)
+    val resolutionRatio = intSetting("resolutionRatio", 250, 25..300)
 
     /**
      * 分辨率规则
@@ -142,7 +142,7 @@ object AllSettings : SettingsRegistry() {
     /**
      * 不检查游戏完整性
      */
-    val skipGameIntegrityCheck = boolSetting("skipGameIntegrityCheck", false)
+    val skipGameIntegrityCheck = boolSetting("skipGameIntegrityCheck", true)
 
     /**
      * 版本自定义信息
