@@ -1344,9 +1344,7 @@ private fun PclBody(nav: PclNavController) {
                             } else {
                                 when (nav.section) {
                                     PclSection.Home -> PclHomeLeft(nav)
-                                    PclSection.Download -> PclDownloadLeft(nav)
                                     PclSection.Setup -> PclSetupLeft(nav)
-                                    PclSection.Other -> PclOtherLeft(nav)
                                     PclSection.Link -> Unit // 联机页无左栏
                                 }
                             }
@@ -1376,10 +1374,8 @@ private fun PclBody(nav: PclNavController) {
                         } else {
                             when (nav.section) {
                                 PclSection.Home -> PclHomeRight(nav)
-                                PclSection.Download -> PclDownloadRight(nav)
                                 PclSection.Link -> PclLinkRight(nav)
                                 PclSection.Setup -> PclSetupRight(nav)
-                                PclSection.Other -> PclOtherRight(nav)
                             }
                         }
                     }
