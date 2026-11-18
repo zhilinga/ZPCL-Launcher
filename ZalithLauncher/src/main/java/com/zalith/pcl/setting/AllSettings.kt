@@ -86,7 +86,7 @@ object AllSettings : SettingsRegistry() {
     /**
      * 分辨率
      */
-    val resolutionRatio = intSetting("resolutionRatio", 250, 25..300)
+    val resolutionRatio = intSetting("resolutionRatio", 100, 25..300)
 
     /**
      * 分辨率规则
