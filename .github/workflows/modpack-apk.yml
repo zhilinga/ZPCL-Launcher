@@ -53,7 +53,7 @@ on:
         options: [arm64, arm, all, x86, x86_64]
         default: arm64
       variant:
-        description: '构建类型'
+        description: '构建类型（Release = 开启 R8 混淆与资源压缩）'
         required: true
         type: choice
         options: [Release, Debug]
